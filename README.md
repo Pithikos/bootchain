@@ -200,13 +200,8 @@ present.
 ##Functions
 
 bootstrap_wait     Pauses the script until the next bootstrap has finished.
-                   Omitting this, makes bootchain assume that this is
-                   as the last script and thus will not run any other
-                   ones.
-                   
-                   This can be handy if you're debugging as you just
-                   need to remove this line and the bootstrap will be
-                   omitted.
+                   Omitting this, will execute the whole script without
+                   waiting for the next bootstrap.
                    
 set_return_value   This can be used in the last bootstrap to set a
 				   specific value to RETURN_VALUE. It's essentially
@@ -298,44 +293,6 @@ be to the program or script you are trying to run.
 
 BOOTCHAIN will automatically look for bootstrap scripts between itself
 and the 
-
-
-
-Common uses
-========================================================================
-This a list of practical uses to give you an idea of when BOOTCHAIN
-can be used. Most uses involve running tests since that was the initial
-purpose of BOOTCHAIN.
-
-* You want to run tests based on different languages & frameworks from a
-  centralized script.
-
-* If you want to setup an environment before running something. For
-  example if you want to run many tests in a virtual machine or container.
-
-
-
-How it works
-========================================================================
-
-Bootchain is simply a script that looks for other scripts named "bootstrap".
-The bootstrap files can have whatever extension but their barename should
-be bootstrap and nothing more. (This makes it possible for these scripts
-to be written in various languages while making it visible what language
-they are written in.)
-
-Each bootstrap script is run one-by-one and in the end the testfile is run.
-Bootstrap scripts can be written in whatever scripting language you want.
-
-The idea is that each bootstrap script closest to the testfile will have
-set the environment correctly for the testfile to run.
-
-The is no constraint as to how many bootscripts you can have. However it's
-best to keep it as small as possible for organisational reasons.
-
-The purpose of this design is to make it possible to have a centrelized place
-to run all your tests without needing to know how each individual test
-should be run. That's up to each bootstrap script to solve for you.
 
 
 
