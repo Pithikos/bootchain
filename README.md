@@ -7,9 +7,9 @@
   \    _-   `/\       _.--.     * Unify programs & scripts of different 
    \    _-   `/`-..--\     )      languages and frameworks
     \    _-   `,','  /    ,')   * Simply BASH
-     `-_   -   ` -- ~   ,','    * Easy integration of existing scripts
-      `-              ,','      * Intuitive behaviour
-       \,--.    ____==-~ 
+     `-_   -   ` -- ~   ,','    * Can run existing scripts without a
+      `-              ,','        single change
+       \,--.    ____==-~        * Intuitive behaviour
         \   \_-~\
          `_-~_.-'
           \-~
