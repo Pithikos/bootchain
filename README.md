@@ -17,7 +17,6 @@
 
 
 #Bootchain?!
-========================================================================
 Bootchain is essentially a simple BASH script which runs other scripts
 recursively. Visually that would look like a chain of scripts.
 
@@ -41,7 +40,6 @@ in a single file.
 
 
 #The benefits
-========================================================================
 **Intuitive**
 You use your already (hopefully logical) hierarchy of the folders in
 your project. Each bootstrap script you place in a folder is going to be
@@ -67,8 +65,7 @@ we can achieve with a bootstrap.
 
 
 
-Usage
-========================================================================
+#Usage
 1. Copy bootchain in a folder.
 2. Create at least one bootstrap between that folder and the target
    file (the one you would like to run with bootchain)
@@ -80,8 +77,7 @@ Usage
 
 
 
-Deeper
-========================================================================
+##Deeper
 You run BOOTCHAIN with:
 
     ./bootchain <target1> <target2> ..
@@ -104,8 +100,8 @@ is the default way of returning values to bootchain.
 
 
 
-A bit deeper
-========================================================================
+##A bit deeper
+
 At least one bootstrap file is needed somewhere in the path of the file
 you are trying to run with bootchain.
 
@@ -115,6 +111,7 @@ chain of bootstraps being run.
 Let's have a look at the /tests folder of an actual project:
 
 
+```
 /tests
   | 
   |-- bootstrap                                   <-- First bootstrap
@@ -132,6 +129,7 @@ Let's have a look at the /tests folder of an actual project:
   |    |
   :    :
   .    .
+```
 
 You can see two bootstrap files. The first will run for all tests (since
 it's at root compared with bootchain). The second will run for everything
@@ -155,8 +153,7 @@ has a bootstrap_wait line) and run it in a recursive fashion.
 
 
         
-Examples
-========================================================================
+#Examples
 There are examples that you can use to see how things work or use
 them as templates in your projects. 
 
@@ -175,8 +172,7 @@ project3 - very deeply nested bootstraps
 
 
 
-Running bootchain
-========================================================================
+#Running bootchain
 ./bootchain a/b/c/      --> Runs all bootstraps between folder a and c
 ./bootchain a/b/c/*     --> Runs all files in folder c (even the
                             bootstrap itself if there is one there)
@@ -184,8 +180,7 @@ Running bootchain
 
 
 
-API
-========================================================================
+#API
 The only mandatory thing is that you use bootstrap_wait in the
 intermediate bootstraps so that a chain of bootstraps is made where
 each bootstrap waits for the next one to finish.
@@ -202,8 +197,8 @@ present.
 
 
 
-Functions
-------------------------------------------------------------------------   
+##Functions
+
 bootstrap_wait     Pauses the script until the next bootstrap has finished.
                    Omitting this, makes bootchain assume that this is
                    as the last script and thus will not run any other
@@ -219,8 +214,8 @@ set_return_value   This can be used in the last bootstrap to set a
 
 
 
-Variables
-------------------------------------------------------------------------
+##Variables
+
 The below variables are visible from all bootstraps.
 
 TARGET             The name of the file that was given to bootchain.
