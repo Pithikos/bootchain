@@ -25,21 +25,20 @@ trap "CHILD_SUSPENDED=true" SIGCONT
 
 # Init
 CHILD_SUSPENDED=false
-LAST_BOOTSTRAP_RUNNING=false
+LAST_CHILD=false
 
 #=======================================================================
 #                          Public Interface
 #=======================================================================
 # These functions run inside the child process - no access to parent vars
 
-export LAST_BOOTSTRAP_RUNNING
+export LAST_CHILD
 bootstrap_wait () {
-	if $LAST_BOOTSTRAP_RUNNING
+	if ! $LAST_CHILD
 	then
-		return
+		suspend_me
+		RETURN_VALUE=`cat "$fifo_file"`
 	fi
-	suspend_me
-	RETURN_VALUE=`cat "$fifo_file"`
 }
 export -f bootstrap_wait
 
@@ -248,25 +247,28 @@ do
 	for bootstrap in `echo "$bootstraps"`
 	do
 
+		if [ "$bootstrap" == "$last_bootstrap" ]
+		then
+			LAST_CHILD=true
+		fi
+		export LAST_CHILD
+
 		# Spawn child
 		spawn_child "$bootstrap"
 		pid=$!
 		children+=($pid)
 
-		# Will it suspend?
-		if [ "$bootstrap" == "$last_bootstrap" ]
+		# Should it wait?
+		if has_bootstrap_wait "$bootstrap" && [ "$bootstrap" != "$last_bootstrap" ]
 		then
-			LAST_BOOTSTRAP_RUNNING=true
-			suspended_children+=($pid)
-		elif has_bootstrap_wait "$bootstrap"
-		then
-			suspended_children+=($pid)
-			while ! $CHILD_SUSPENDED # 
+			suspended_children+=($!)
+			while ! $CHILD_SUSPENDED
 			do
 				sleep 0.01
 			done
 			CHILD_SUSPENDED=false
-		else
+		elif [ "$bootstrap" != "$last_bootstrap" ]
+		then
 			wait $pid
 		fi
 		
@@ -275,9 +277,9 @@ do
 	
 	
 	# Wait for last bootstrap to exit
-	wait ${suspended_children[@]:(-1)}
+	wait ${children[@]:(-1)}
 	RETURN_VALUE="$?"
-	LAST_BOOTSTRAP_RUNNING=false
+	LAST_CHILD=false
 
 	# Returning value to prev child
 	rm -f "$fifo_file"
@@ -285,7 +287,7 @@ do
 	echo "$RETURN_VALUE" > "$fifo_file" &
 
 	# Exit remaining bootstraps gradually in a LIFO fashion
-	for (( i=${#suspended_children[@]}-2 ; i>=0 ; i-- ))
+	for (( i=${#suspended_children[@]}-1 ; i>=0 ; i-- ))
 	do
 		child="${suspended_children[i]}"
 		if pid_exists "$child"
