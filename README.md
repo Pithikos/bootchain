@@ -6,11 +6,11 @@
  \         `/\                  
   \    _-   `/\       _.--.     * Unify programs & scripts of different 
    \    _-   `/`-..--\     )      languages and frameworks
-    \    _-   `,','  /    ,')   * Use BASH scripts as bootstraps
-     `-_   -   ` -- ~   ,','    * Make a BASH script into a bootstrap by
-      `-              ,','        simply adding one line of code
-       \,--.    ____==-~        * Intuitive since it uses your project's
-        \   \_-~\                 directory hierarchy
+    \    _-   `,','  /    ,')   * Simply BASH
+     `-_   -   ` -- ~   ,','    * Easy integration of existing scripts
+      `-              ,','      * Intuitive behaviour
+       \,--.    ____==-~ 
+        \   \_-~\
          `_-~_.-'
           \-~
 ```
