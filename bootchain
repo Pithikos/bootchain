@@ -237,37 +237,45 @@ do
 	echo "-------------------------------------------------------------"  
 	echo "Target: $target"
 	
-	children=()
+	children=()           # holds all created children
+	suspended_children=() # holds only suspended children
 	
 	bootstraps=`all_bootstraps "$target"`
 	last_bootstrap=`last_path "$bootstraps"`
+	echo "last bootstrap: $last_bootstrap"
 	
-	# Run sibling + children bootstraps (order is important)
+	# Run sibling + suspended_children bootstraps (order is important)
 	for bootstrap in `echo "$bootstraps"`
 	do
 
-		# Last bootstrap won't suspend
-		if [ "$bootstrap" == "$last_bootstrap" ] || ! has_bootstrap_wait "$bootstrap"
+		# Spawn child
+		spawn_child "$bootstrap"
+		pid=$!
+		children+=($pid)
+
+		# Will it suspend?
+		if [ "$bootstrap" == "$last_bootstrap" ]
 		then
 			LAST_BOOTSTRAP_RUNNING=true
-			spawn_child "$bootstrap"
-			children+=($!)
-		# The others will
-		else
-			spawn_child "$bootstrap"
-			children+=($!)
+			suspended_children+=($pid)
+		elif has_bootstrap_wait "$bootstrap"
+		then
+			suspended_children+=($pid)
 			while ! $CHILD_SUSPENDED # 
 			do
 				sleep 0.01
 			done
 			CHILD_SUSPENDED=false
+		else
+			wait $pid
 		fi
+		
 
 	done
 	
 	
 	# Wait for last bootstrap to exit
-	wait ${children[@]:(-1)}
+	wait ${suspended_children[@]:(-1)}
 	RETURN_VALUE="$?"
 	LAST_BOOTSTRAP_RUNNING=false
 
@@ -277,9 +285,9 @@ do
 	echo "$RETURN_VALUE" > "$fifo_file" &
 
 	# Exit remaining bootstraps gradually in a LIFO fashion
-	for (( i=${#children[@]}-2 ; i>=0 ; i-- ))
+	for (( i=${#suspended_children[@]}-2 ; i>=0 ; i-- ))
 	do
-		child="${children[i]}"
+		child="${suspended_children[i]}"
 		if pid_exists "$child"
 		then
 			
