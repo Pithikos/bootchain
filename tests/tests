@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+tmp_file="tmp_file"
+tmp_file2="tmp_file2"
+cd ..
+echo "--------------------------------------------------"
+
+
+
+# Tests to see if launched children are spawned and killed
+# in line. If not, then is probably some synchronisation
+# issue.
+rm -f "$tmp_file"
+rm -f "$tmp_file2"
+./bootchain examples/project3/a/b/c/d/e/test.py > "$tmp_file"
+cat tmp_file | grep -e "([0-9]*)" | sed "s/.*\(([0-9]*)\).*/\1/" | sed "s/.\([0-9]*\)./\1/" > "$tmp_file2"
+rm -f "$tmp_file"
+pids=`cat "$tmp_file2"`
+pids_mirr=`tac "$tmp_file2" || tail -r bootchain`
+if [ "$pids" == "$pids_mirr" ]
+then
+	echo "Synchronisation: PASS"
+else
+	echo "Synchronisation: FAIL"
+	exit 1
+fi
+
+
+
+
+# TODO:
+# Tests to see if launching same test many times results in
+# exact samebehaviour.
+
+
+
+# TODO:
+# Test to see if there are zombie children around at any point.
+
+
+
+
+
+rm -f "$tmp_file"
+rm -f "$tmp_file2"

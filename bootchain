@@ -1,0 +1,294 @@
+#!/bin/bash
+
+############################################################
+# This is the main bootchain file                          #
+#                                                          #
+# Bootchain does the following                             #
+#   1. Looks for bootstrap scripts                         #
+#   2. Executes the bootstraps one by one until the line   #
+#      with the function bootstrap_wait                    #
+#   3. Executes the rest of the bootstrap code going       #
+#      backwards fromt the n to the n-1 bootstrap          #
+#                                                          #
+#   Usage: ./bootstrap.sh mytest mytest2 mytest3           #
+#                                                          #
+############################################################
+
+
+# Configuration
+bootstrap_file_name="bootstrap" #extensions are omitted
+bootchain_log="chain.log"
+fifo_file="/tmp/bootchain_child_to_parent" #the fifo file used by children to send info
+
+# Signal that children will send
+trap "CHILD_SUSPENDED=true" SIGCONT
+
+# Init
+CHILD_SUSPENDED=false
+LAST_BOOTSTRAP_RUNNING=false
+
+#=======================================================================
+#                          Public Interface
+#=======================================================================
+# These functions run inside the child process - no access to parent vars
+
+export LAST_BOOTSTRAP_RUNNING
+bootstrap_wait () {
+	if $LAST_BOOTSTRAP_RUNNING
+	then
+		return
+	fi
+	suspend_me
+	RETURN_VALUE=`cat "$fifo_file"`
+}
+export -f bootstrap_wait
+
+export fifo_file
+
+#=========================== used by child =============================
+
+# obsolete
+suspend_me () {
+	trap 'SUSPEND=false' SIGCONT
+	SUSPEND=true
+	kill -SIGCONT "$PPID" # tell parent that we reached suspend state
+	while $SUSPEND
+	do
+		sleep 0.1
+	done;
+}
+export -f suspend_me
+
+set_return_value () { #value
+	RETURN_VALUE="$1"
+	trap "exit $RETURN_VALUE" EXIT
+}
+export -f set_return_value
+
+
+#=======================================================================
+#                     Interprocess communication
+#=======================================================================
+#
+# !!! Signals are used to synchronise parent and children !!!
+#
+#
+
+spawn_child () { #path_to_script
+	local prev_pwd=`pwd`
+	cd `dirname "$1"`
+	'./'"$bootstrap_file_name" &
+	cd "$prev_pwd"
+}
+
+kill_and_wait () { #pid #signal 
+	local signal='SIGINT'
+	if (( $# > 1 )); then
+		signal=$2
+	fi
+	kill -$signal $1
+	wait $1
+}
+
+resume_child () { #child_pid
+	kill_and_wait "$1" SIGCONT
+}
+
+#=======================================================================
+#                        Generic functions
+#=======================================================================
+
+function count_char { #string #char
+	echo "$1" | tr -d -c "$2\n" | awk '{ print length; }'
+}
+
+function len { #string
+	echo "$1" | awk '{ print length; }'
+}
+
+# All possible paths excluding . and ..
+function all_paths { #path
+	local paths_N=`count_char "$1" '/'`
+	for i in `seq $paths_N`
+	do
+		local path=`echo "$1" | cut -d'/' -f1-"$i"`
+		if [ `echo "$1" | cut -b1` == '.' ] && [ `len "$path"` == '1' ]
+		then
+			continue #omit current path
+		fi
+		if [ ! "$paths" ]; then
+			local paths="$path"
+		else
+			local paths="$paths $path"
+		fi
+	done
+	echo "$paths"
+}
+
+function last_path { #paths
+	echo `echo "$1" | sed 's/.* //'`
+}
+
+function count_paths { #paths
+	echo "$1" | tr -d -c ' ' | awk '{ print length+1 }'
+}
+
+function pid_exists { #pid
+	ps -p "$1" >> /dev/null
+}
+
+
+#=======================================================================
+#                         Bootstrap functions
+#=======================================================================
+
+function has_bootstrap_wait { #bootstrap_path
+	if grep -e '^bootstrap_wait$' "$1" >> /dev/null
+	then
+		true
+	else
+		false
+	fi
+}
+
+
+function all_bootstraps { #path
+	paths='. '`all_paths "$1"`
+	bootstraps=''
+	for path in `echo "$paths"`
+	do
+		if ls "$path/$bootstrap_file_name" &> /dev/null
+		then
+			bootstraps+=" $path/$bootstrap_file_name"
+		fi
+	done
+	echo "$bootstraps"
+}
+
+
+#=======================================================================
+#                               Usage
+#=======================================================================
+
+function usage {
+	echo "Usage: `basename $0` <testfile> <testfile2> .."
+	echo "       where <testfile1>, etc. are the pathnames"
+	echo "       to the test files"
+}
+
+
+
+
+#=======================================================================
+#                               Intro
+#=======================================================================
+
+echo
+echo "   _________________________________________________ "
+echo "  |    ___     ___                   ___            |"
+echo "  |   |  /    |  /     Bootchain     \  |           |"
+echo "  |---| (__---| (__-----------------__) |           |"
+echo "  |   (____)  (____)               (____)           |"
+echo "  |_________________________________________________|"
+echo
+
+if (($# == 0)); then
+	echo "No tests given."
+	echo "Exiting."
+	usage
+	exit 0
+fi
+
+
+
+
+#=======================================================================
+#                               Main
+#=======================================================================
+
+# Fixate bootstrap naming
+if [ `count_char "bootstrap_file_name" '.'` -lt 0 ]; then
+	bootstrap_file_name=`echo "$bootstrap_file_name" | cut -f1 -d'.'`
+fi
+
+
+# Run specified test in it
+echo
+echo "Will run targets.."
+
+# Create a pipe for children to get return values
+rm -f "$fifo_file"
+mkfifo -m a=rw "$fifo_file"
+
+for target in "$@"
+do
+
+	# Does target exist?
+	if ! ls "$target" > /dev/null
+	then
+		echo "ERROR: Target doesn't exist: $target"
+		exit 1
+	fi
+
+	TARGET_PATH=$target
+	TARGET=`basename $target`
+	export TARGET_PATH
+	export TARGET
+	echo "-------------------------------------------------------------"  
+	echo "Target: $target"
+	
+	children=()
+	
+	bootstraps=`all_bootstraps "$target"`
+	last_bootstrap=`last_path "$bootstraps"`
+	
+	# Run sibling + children bootstraps (order is important)
+	for bootstrap in `echo "$bootstraps"`
+	do
+
+		# Last bootstrap won't suspend
+		if [ "$bootstrap" == "$last_bootstrap" ] || ! has_bootstrap_wait "$bootstrap"
+		then
+			LAST_BOOTSTRAP_RUNNING=true
+			spawn_child "$bootstrap"
+			children+=($!)
+		# The others will
+		else
+			spawn_child "$bootstrap"
+			children+=($!)
+			while ! $CHILD_SUSPENDED # 
+			do
+				sleep 0.01
+			done
+			CHILD_SUSPENDED=false
+		fi
+
+	done
+	
+	
+	# Wait for last bootstrap to exit
+	wait ${children[@]:(-1)}
+	RETURN_VALUE="$?"
+	LAST_BOOTSTRAP_RUNNING=false
+
+	# Returning value to prev child
+	rm -f "$fifo_file"
+	mkfifo -m a=rw "$fifo_file"
+	echo "$RETURN_VALUE" > "$fifo_file" &
+
+	# Exit remaining bootstraps gradually in a LIFO fashion
+	for (( i=${#children[@]}-2 ; i>=0 ; i-- ))
+	do
+		child="${children[i]}"
+		if pid_exists "$child"
+		then
+			
+			# Write return value first
+			echo "$RETURN_VALUE" > "$fifo_file" &
+			
+			# Then resume
+			resume_child "$child"
+		fi
+	done
+
+done

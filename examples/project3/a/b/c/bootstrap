@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Bootstrap 3 ~~ ENTRY ($BASHPID)"
+bootstrap_wait
+echo "Bootstrap 3 ~~ EXIT ($BASHPID)"

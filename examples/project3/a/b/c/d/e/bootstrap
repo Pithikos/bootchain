@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Bootstrap 5 ~~ ENTRY ($BASHPID)"
+python "$TARGET"
+set_return_value $?
+echo "Bootstrap 5 ~~ EXIT ($BASHPID)"
