@@ -16,7 +16,7 @@
 ```
 
 
-Bootchain?!
+#Bootchain?!
 ========================================================================
 Bootchain is essentially a simple BASH script which runs other scripts
 recursively. Visually that would look like a chain of scripts.
@@ -40,7 +40,7 @@ in a single file.
 
 
 
-The benefits
+#The benefits
 ========================================================================
 **Intuitive**
 You use your already (hopefully logical) hierarchy of the folders in
