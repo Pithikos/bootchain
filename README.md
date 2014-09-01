@@ -264,11 +264,11 @@ esses.
 How it works
 ========================================================================
 
-If you are calling: ./bootchain 
+If you are calling `./bootchain`
 
 The flow of how things are being called is:
 
-
+```
  BOOTCHAIN            bootstrap                  bootstrap
                       script1                     script2
  ___________           __________________         __________________
@@ -277,7 +277,8 @@ The flow of how things are being called is:
 |           |         |  bootstrap_wait  |       |                  |
 |           |<----------    do stuff    <----------    exit 0       |
 |___________|         |__________________|       |__________________|
- 
+```` 
+
 In the last bootstrap we omit bootstrap_wait as it's the last bootstrap.
 If this is the last bootstrap but you have placed a bootstrap_wait,
 the wait will silently be omitted.
@@ -355,22 +356,21 @@ ways like files, named pipes, sockets etc.
 
 
 
-Design notes
+FAQ & Design notes
 ========================================================================
 
-Do bootstraps run recursively?
-------------------------------------------------------------------------
+##Do bootstraps run recursively?
+
 Bootstraps do behave as if they are running recursively. However
-in practice they are run linearly for various reasons with performance
-the biggest one. Even if the implementation is linear, the behaviour
-is recursive so you can safely think of them as running recursively.
+in practice Bootchain acts as the parent process that synchronises
+everything. This implementation makes the code more robust.
 
 Keep in mind that in this case no data is passed from one bootstrap to
 the next.
 
 
-Why execute bootstraps linearly and not recursively?
-------------------------------------------------------------------------
+##Why execute bootstraps linearly and not recursively?
+
 The initial idea was to execute the bootstrap scripts recursively. However
 that becomes very complex if many files are run. Therefore a linear
 way was chosen. Furthermore it's easier to have a communication link
@@ -386,8 +386,8 @@ return value directly from the last child and thus have that value before
 the cleanup of each child.
 
 
-Why ./ (background process) and no . (source)?
-------------------------------------------------------------------------
+##Why ./ (background process) and no . (source)?
+
 Source can't be used because each bootstrap has to be running (even if
 they are suspended) at the same time. By default `source` can't do that.
 
@@ -396,8 +396,8 @@ thing in a separate process. But then you get the same behaviour as if
 you ran the whole thing as a background process from the beginning.
 
 
-Parent/children synchronisation
-------------------------------------------------------------------------
+##Parent/children synchronisation
+
 The parent and children communicate in two different way. For synchroni-
 sation purposes they use the signal SIGCONT. This is used by any of the
 two when they want to tell the other partner to continue, if they are
@@ -413,8 +413,8 @@ for the synchronisation as well. However, having both, makes the program
 to work in the same way even if we don't return a return command  at the
 last bootstrap.
 
-Signals vs Named pipes
-------------------------------------------------------------------------
+##Signals vs Named pipes
+
 Named pipes can't be used by bootstrap_wait because then we would need
 a unique pipe for each individual child which becomes cumbersome.
 
