@@ -241,7 +241,6 @@ do
 	
 	bootstraps=`all_bootstraps "$target"`
 	last_bootstrap=`last_path "$bootstraps"`
-	echo "last bootstrap: $last_bootstrap"
 	
 	# Run sibling + suspended_children bootstraps (order is important)
 	for bootstrap in `echo "$bootstraps"`
