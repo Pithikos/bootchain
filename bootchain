@@ -19,6 +19,7 @@
 bootstrap_file_name="bootstrap" #extensions are omitted
 bootchain_log="chain.log"
 fifo_file="/tmp/bootchain_child_to_parent" #the fifo file used by children to send info
+vars_file="/tmp/bootchain_vars"
 
 # Signal that children will send
 trap "CHILD_SUSPENDED=true" SIGCONT
@@ -31,6 +32,12 @@ LAST_CHILD=false
 #                          Public Interface
 #=======================================================================
 # These functions run inside the child process - no access to parent vars
+
+export_var () { #var_name #var_value
+	echo "$1"'='\""$2"\" >> "$vars_file"
+}
+export vars_file
+export -f export_var
 
 export LAST_CHILD
 bootstrap_wait () {
@@ -46,7 +53,6 @@ export fifo_file
 
 #=========================== used by child =============================
 
-# obsolete
 suspend_me () {
 	trap 'SUSPEND=false' SIGCONT
 	SUSPEND=true
@@ -74,6 +80,14 @@ export -f set_return_value
 #
 
 spawn_child () { #path_to_script
+	if [ "$bootstrap" == "$last_bootstrap" ]
+	then
+		LAST_CHILD=true
+	fi
+	export LAST_CHILD
+	
+	export_vars
+	
 	local prev_pwd=`pwd`
 	cd `dirname "$1"`
 	'./'"$bootstrap_file_name" &
@@ -92,6 +106,24 @@ kill_and_wait () { #pid #signal
 resume_child () { #child_pid
 	kill_and_wait "$1" SIGCONT
 }
+
+
+# This will export all variables found in $vars_file
+export_vars () {
+	if ! ls "$vars_file" &>> /dev/null; then
+		return; fi
+	old_IFS=$IFS
+	IFS=$'\n'
+	for line in `cat "$vars_file"`
+	do
+		source "$vars_file"
+		local var=`echo "$line" | cut -f1 -d'='`
+		local val=`echo "$line" | cut -f2 -d'='`
+		export "$var"
+	done
+	IFS=$old_IFS
+}
+
 
 #=======================================================================
 #                        Generic functions
@@ -228,11 +260,14 @@ do
 		echo "ERROR: Target doesn't exist: $target"
 		exit 1
 	fi
-
+	
+	# Set vars
 	TARGET_PATH=$target
 	TARGET=`basename $target`
 	export TARGET_PATH
 	export TARGET
+	rm -f "$vars_file"
+	
 	echo "-------------------------------------------------------------"  
 	echo "Target: $target"
 	
@@ -245,12 +280,6 @@ do
 	# Run sibling + suspended_children bootstraps (order is important)
 	for bootstrap in `echo "$bootstraps"`
 	do
-
-		if [ "$bootstrap" == "$last_bootstrap" ]
-		then
-			LAST_CHILD=true
-		fi
-		export LAST_CHILD
 
 		# Spawn child
 		spawn_child "$bootstrap"
@@ -301,3 +330,7 @@ do
 	done
 
 done
+
+# Cleanup
+rm -f "$vars_file"
+rm -f "$fifo_file"

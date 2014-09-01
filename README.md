@@ -199,13 +199,16 @@ present.
 
 ##Functions
 
-bootstrap_wait     Pauses the script until the next bootstrap has finished.
-                   Omitting this, will execute the whole script without
-                   waiting for the next bootstrap.
+bootstrap_wait          Pauses the script until the next bootstrap has
+                        finished. Omitting this, will execute the whole
+                        script without waiting for the next bootstrap.
                    
-set_return_value   This can be used in the last bootstrap to set a
-				   specific value to RETURN_VALUE. It's essentially
-				   an alternative of using BASH's `exit`.
+set_return_value VALUE  This can be used in the last bootstrap to set a
+				        specific value to RETURN_VALUE. It's essentially
+				        an alternative of using BASH's `exit`.
+
+export_var NAME VALUE   Similar to BASH' export. This function will set
+                        a variable to be inherited to all sub-bootstraps.
 
 
 
@@ -382,3 +385,8 @@ In practice, signals can be used for the synchronisation until we reach
 the latest bootstrap. After that we need to combine signals with pipe.
 Namely we signal the previous child that we have created a pipe that it
 can read.
+
+##How does export_var work?
+
+It essentially appends the variable in a file. Then bootchain just exports
+each individual variable to the next child.
