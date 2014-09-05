@@ -3,12 +3,11 @@
 ############################################################
 # This is the main bootchain file                          #
 #                                                          #
-# Bootchain does the following                             #
-#   1. Looks for bootstrap scripts                         #
-#   2. Executes the bootstraps one by one until the line   #
-#      with the function bootstrap_wait                    #
-#   3. Executes the rest of the bootstrap code going       #
-#      backwards fromt the n to the n-1 bootstrap          #
+# The main things it does are:                             #
+#                                                          #
+#   1. Looks for bootstrap scripts between itself and      #
+#      target                                              #
+#   2. Executes these bootstraps pseudo-recursively        #
 #                                                          #
 #   Usage: ./bootstrap.sh mytest mytest2 mytest3           #
 #                                                          #
@@ -33,6 +32,9 @@ LAST_CHILD=false
 #=======================================================================
 # These functions run inside the child process - no access to parent vars
 
+
+#=============================== API ===================================
+
 export_var () { #var_name #var_value
 	echo "$1"'='\""$2"\" >> "$vars_file"
 }
@@ -41,10 +43,11 @@ export -f export_var
 
 export LAST_CHILD
 bootstrap_wait () {
+   trap "exit_handler" EXIT
 	if ! $LAST_CHILD
 	then
 		suspend_me
-		RETURN_VALUE=`cat "$fifo_file"`
+		RETURN_VALUE=`cat "$fifo_file"` # this to be used in this bootstrap
 	fi
 }
 export -f bootstrap_wait
@@ -52,6 +55,24 @@ export -f bootstrap_wait
 export fifo_file
 
 #=========================== used by child =============================
+
+
+# Makes sure we know if user invoked exit explicitly
+# Needs a trap to EXIT to work
+exit_handler () {
+   ret=$?
+   if echo "$BASH_COMMAND" | grep -e "^exit \|^exit$" >> /dev/null
+   then
+      echo "it was an explicit exit"
+      # THUS WE SHOULD UPDATE RETURN VALUE
+      RETURN_VALUE=$ret
+   else
+      echo "it was an implicit exit"
+      # WE SHOULDN'T DO ANYTHING HERE, LET RETURN VALUE PROPAGATE
+   fi
+}
+export -f exit_handler
+
 
 suspend_me () {
 	trap 'SUSPEND=false' SIGCONT
@@ -64,9 +85,11 @@ suspend_me () {
 }
 export -f suspend_me
 
+
 set_return_value () { #value
-	RETURN_VALUE="$1"
-	trap "exit $RETURN_VALUE" EXIT
+	#RETURN_VALUE="$1"
+	#trap "exit $RETURN_VALUE" EXIT
+   echo
 }
 export -f set_return_value
 
@@ -321,15 +344,21 @@ do
 		if pid_exists "$child"
 		then
 			
-			# Write return value first
+         
+         #RETURN_VALUE=
+         
+			# Write return value to prev child
 			echo "$RETURN_VALUE" > "$fifo_file" &
 			
 			# Then resume
 			resume_child "$child"
+         
+         #RETURN_VALUE=$?
 		fi
 	done
 
 done
+
 
 # Cleanup
 rm -f "$vars_file"
