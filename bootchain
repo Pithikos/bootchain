@@ -14,12 +14,6 @@
 ############################################################
 
 
-Communication
-
-MASTER    CHILD_1
-         <explicit exit
-                     
-
 
 
 
@@ -75,7 +69,6 @@ exit_handler () {
       echo "it was an explicit exit"
       # THUS WE SHOULD UPDATE RETURN VALUE
       RETURN_VALUE=$ret
-      echo it
    else
       echo "it was an implicit exit"
       
@@ -162,13 +155,16 @@ export_vars () {
 #                        Generic functions
 #=======================================================================
 
-function count_char { #string #char
-	echo "$1" | tr -d -c "$2\n" | awk '{ print length; }'
+function len { #string
+   echo ${#1}
 }
 
-function len { #string
-	echo "$1" | awk '{ print length; }'
+function count_char { #string #char
+   len "$( echo "$1" | tr -d -c "$2\n" )"
+	#echo "$1" | tr -d -c "$2\n" | awk '{ print length; }'
 }
+
+
 
 # All possible paths excluding . and ..
 function all_paths { #path
@@ -242,7 +238,6 @@ function usage {
 
 
 
-
 #=======================================================================
 #                               Intro
 #=======================================================================
@@ -262,7 +257,6 @@ if (($# == 0)); then
 	usage
 	exit 0
 fi
-
 
 
 
