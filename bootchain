@@ -14,6 +14,15 @@
 ############################################################
 
 
+Communication
+
+MASTER    CHILD_1
+         <explicit exit
+                     
+
+
+
+
 # Configuration
 bootstrap_file_name="bootstrap" #extensions are omitted
 bootchain_log="chain.log"
@@ -66,8 +75,10 @@ exit_handler () {
       echo "it was an explicit exit"
       # THUS WE SHOULD UPDATE RETURN VALUE
       RETURN_VALUE=$ret
+      echo it
    else
       echo "it was an implicit exit"
+      
       # WE SHOULDN'T DO ANYTHING HERE, LET RETURN VALUE PROPAGATE
    fi
 }
@@ -110,11 +121,10 @@ spawn_child () { #path_to_script
 	export LAST_CHILD
 	
 	export_vars
-	
-	local prev_pwd=`pwd`
+
 	cd `dirname "$1"`
 	'./'"$bootstrap_file_name" &
-	cd "$prev_pwd"
+	cd "$OLDPWD"
 }
 
 kill_and_wait () { #pid #signal 
@@ -347,7 +357,9 @@ do
          
          #RETURN_VALUE=
          
-			# Write return value to prev child
+			# Write return value to fifo for child to read
+         # SOMEHOW UPDATE RETURN VALUE
+         # THUS PARENT MUST KNOW IF EXPLICIT
 			echo "$RETURN_VALUE" > "$fifo_file" &
 			
 			# Then resume
