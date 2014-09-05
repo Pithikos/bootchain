@@ -1,0 +1,13 @@
+TO CHANGE
+* RETURN_VALUE should propagate until changed explicitly with BASH's exit.
+  Remove set_return_value since it's rather ambiguous.
+* superexport_var - export variables to parent
+* TARGET -> relative path to current bootstrap
+* Cleanup of Bootchain should be trapped on EXIT. Thus even malfunctions
+  will not leak info (in the form of files).
+
+TO ADD
+* TARGET_FILE -> filename of target
+
+TO CLEANUP
+* Remove all set_return_value stuff

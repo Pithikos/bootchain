@@ -13,6 +13,8 @@
         \   \_-~\
          `_-~_.-'
           \-~
+          
+          (for thorough documentation check in doc folder)
 ```
 
 
@@ -24,44 +26,50 @@ Why not call it Scriptchain then? Well, you could. However Bootchain was
 made with the initial goal to unify the test files in a big project.
 Imagine having a bunch of test files, each in a different language or
 using a totally different framework. You either need a thorough
-documetnation on how tests are run or you need some sort of tool that
-keeps meta-data about your tests. We chose the second choice, where the
-meta-data are just simple BASH-scripts which know how to run each test or
-group of tests.
+documentation on how to run each individual test or ysome sort of tool that
+keeps meta-data about your test files. Bootchain takes the second apporach.
+However instead of using some static text files defining things, it uses
+simple BASH-scripts. In that way you don't need to learn anything new.
+You just make a BASH script and make sure that it knows how to run your
+test file/files.
 
 An other way to think of these BASH-scripts is as bootstraps. Bootstraps
 are generally scripts or programs that run other scripts or programs.
-You can think of them as wrappers. Since these wrappers are just BASH-scripts
-in our case, we can do whatever we want with them. You can setup an
+Since these wrappers are just BASH-scripts in our case, we have quite some
+freedom and power as to what we can do with them. You can setup an
 environment where you want your ultimate program/script to run for example
 or you could just try and collect the return value of each program/script
 in a single file.
 
 
 
-#The benefits
+#Benefits of using Bootchain
 **Intuitive**
-You use your already (hopefully logical) hierarchy of the folders in
-your project. Each bootstrap script you place in a folder is going to be
-used by all files underneath it (recursively).
+Your project is already stored in folders and subfolders (hopefully in a nice
+organized manner). Bootchain takes advantage of that. Namely you place
+a bootstrap in the folder that makes sense to you and IF you want.
+The bootstrap has then an effect on everything underneath it
+(recursively).
 
 **Simplicity**
 The scripts you make, are simple BASH scripts with the only addition of
-a simple bootstrap_wait command. This command just tells the script to
-wait for the next script to finish before continuing. Simple, right?
+a simple bootstrap_wait command (and even that is optional). This
+command just tells the script to wait for the next script to finish
+before continuing. Simple, right? Ofcourse you are given some more
+variables and functions you can use but EVERYTHING is optional!
 
-**Always a return value**
-You always get a return value from the last bootstrap. The last bootstrap
-is essentially the one that runs your program, script or whatever. You
-obviously want to get the return value of that. Luckily you get that
-in each individual bootstrap when the latter one has finished. You just
-need to `exit` as you would in any BASH script or use Bootchain's
-function `set_return_value` to set a value explicitly.
-
+**Recursion when it makes sense**
+You can achieve full recursion behaviour by using the API. However
+sometimes some scripts don't need the recursion hillibilly while others do.
+So how do you combine them? Well since the implementation of Bootchain
+is linear, there is no problem. For example you can completely omit the
+bootstrap_wait function in one BASH script without screwing up the flow
+of the rest of bootstrap scripts.
 
 **System close**
 Since bootstraps are shell scripts, we have a very big range of what
-we can achieve with a bootstrap.
+we can achieve with a bootstrap. You can make system calls, run programs
+and what not.
 
 
 
@@ -69,46 +77,28 @@ we can achieve with a bootstrap.
 1. Copy bootchain in a folder.
 2. Create at least one bootstrap between that folder and the target
    file (the one you would like to run with bootchain)
-3. Make sure that the last bootstrap uses `set_return_value` or `exit`
-   if you are going to use the return value of your target.
+3. Use the API of Bootchain if you like
 4. Run the target file/files with bootchain:
-
-    ./bootchain <target1> <target2> ..
-
-
-
-##Deeper
-You run BOOTCHAIN with:
 
     ./bootchain <target1> <target2> ..
 
 where <target1>, <target2> etc. are paths to the scripts or programs
 you are trying to run. Use absolute paths or relative to the bootchain.
 
-You should have at least one bootstrap file between the target and the
-bootchain. The reason is that bootchain doesn't know how to run
-the target file. It needs a bootstrap to tell it how.
-
-If you want to run a python script for example you would probably
-want a bootstrap that at some point has:
-
-    python $TARGET
-    echo ?$
-
-The second line just echoes back the return value of the script run. This
-is the default way of returning values to bootchain.
 
 
-
-##A bit deeper
+#An example
 
 At least one bootstrap file is needed somewhere in the path of the file
-you are trying to run with bootchain.
+you are trying to run with bootchain. That's because Bootchain itself
+doesn't know how to run your <target> file. It relies on bootstraps for
+that.
 
 However you can have multiple bootstrap files in between to create a
 chain of bootstraps being run.
 
-Let's have a look at the /tests folder of an actual project:
+Let's have a look at the /tests folder of an actual project where we
+use Bootchain:
 
 
 ```
@@ -131,35 +121,69 @@ Let's have a look at the /tests folder of an actual project:
   .    .
 ```
 
-You can see two bootstrap files. The first will run for all tests (since
-it's at root compared with bootchain). The second will run for everything
-under the 'gui' folder.
+We could run both test files (profile.py and threads.py) with
 
-The bootstrap files could look very different depending on what you want
-them to do. For example in this case maybe we want to create a Docker
-container for all our tests so then the first bootstrap would create a
-container and then destroy it:
+```
+./bootchain gui/forum/*.py
+```
+
+That will run the first bootstrap and then the second one.
+
+If these bootstraps don't make use of any of the API, they will run like
+normal BASH scripts one after the other. Keep in mind that the first
+bootscrap will then finish before the second one being launched.
+
+In most cases you would want the last bootstrap to run the actual target.
+In our case the second bootstrap should have at some point
+
+    python $TARGET
+    set_return_value ?$
+
+$TARGET is the relative path from the bootstrap to the target file we
+want to run.
 
 
+Now, if we use bootstrap_wait in the first bootstrap, then the flow
+of execution will look like below.
 
 
-All this is pure BASH. If it's a bit intimidating, don't worry. You
-just have to google around for your case scenario.
+```
+./bootchain            bootstrap 1                bootstrap 2
+ ___________           __________________         __________________
+|           |         |                  |       |                  |
+|           |---------->    do stuff    ---------->   do stuff      |
+|           |         |  bootstrap_wait  |       |                  |
+|           |<----------    do stuff    <----------   do stuff      |
+|___________|         |__________________|       |__________________|
+```` 
+
+Without bootstrap_wait however we just treat the bootstrap as a normal
+BASH script:
 
 
+```
+./bootchain            bootstrap 1                bootstrap 2
+ ___________           __________________         __________________
+|           |         |                  |       |                  |
+|           |---------->    do stuff    ---------->   do stuff      |
+|           |         |                  |       |                  |
+|           |<--.     |     do stuff     |    .-----  do stuff      |
+|___________|    .    |__________________|   .   |__________________|
+                  '-------------------------'
+```` 
 
-BOOTCHAIN will run any bootsrap file it finds on its way (as long as it
-has a bootstrap_wait line) and run it in a recursive fashion.
 
 
         
 #Examples
 There are examples that you can use to see how things work or use
-them as templates in your projects. 
+them as templates for your projects. 
 
+
+```
 project1 - running a few (really) simple tests in python
 
-		   Run with: ./bootchain examples/project1/tests/gui/logged_in/*.py
+           Run with: ./bootchain examples/project1/tests/gui/logged_in/*.py
 
 project2 - running tests in a docker container. you need to have Pithikos's
            docker-enter installed for this to work.
@@ -169,32 +193,16 @@ project2 - running tests in a docker container. you need to have Pithikos's
 project3 - very deeply nested bootstraps
            
            Run with: ./bootchain examples/project3/a/b/c/d/e/test.py
+           
+project4 - Demonstrates how to return a value
 
-
-
-#Running bootchain
-./bootchain a/b/c/      --> Runs all bootstraps between folder a and c
-./bootchain a/b/c/*     --> Runs all files in folder c (even the
-                            bootstrap itself if there is one there)
-./bootchain a/b/c/*.py  --> Runs all python files in folder c
+           Run with: ./bootchain examples/project4/a/b/c/return_22.py
+```
 
 
 
 #API
-The only mandatory thing is that you use bootstrap_wait in the
-intermediate bootstraps so that a chain of bootstraps is made where
-each bootstrap waits for the next one to finish.
-
-The last bootstrap will automatically omit bootstrap_wait if it is
-present.
-
-
-    # SETUP STUFF
-	
-    bootstrap_wait
-    
-    # CLEANUP STUFF
-
+All functions and variables are optional.
 
 
 ##Functions
@@ -204,11 +212,21 @@ bootstrap_wait          Pauses the script until the next bootstrap has
                         script without waiting for the next bootstrap.
                    
 set_return_value VALUE  This can be used in the last bootstrap to set a
-				        specific value to RETURN_VALUE. It's essentially
-				        an alternative of using BASH's `exit`.
-
+				            specific value to RETURN_VALUE. It's essentially
+                        an alternative of using BASH's `exit`. Keep in
+                        mind though that set_return_value will OVERRIDE
+                        BASH's `exit`. This is
+                        helpful if you want to store the return value
+                        of a command but want to continue doing some things
+                        before exiting the bootstrap. Keep in mind that
+                        if you have both `exit` and set_return_value
+                        `exit` won't have any effect on the RETURN_VALUE.
+                        This is helpful since you can always see the RETURN_VALUE
+                        of the executed target, and the return value of
+                        the previous bootstrap.
+                        
 export_var NAME VALUE   Similar to BASH' export. This function will set
-                        a variable to be inherited to all sub-bootstraps.
+                        a variable to be inherited to ALL sub-bootstraps.
 
 
 
@@ -244,149 +262,3 @@ RETURN_VALUE       This is empty until you set a value to it in the last
 
 * Notice that all variables passed to a bootstrap are in capital to make
   it more aparent that they are part of bootchain.
-
-
-
-Scope
-------------------------------------------------------------------------
-Each bootstrap runs as a separate process. Therefore if you want to achieve
-communication between bootstraps, you'll need to use some type of
-inter-process communication like signals, FIFOs, files, sockets, etc.
-
-If you are going to use signals, keep in mind that SIGCONT
-is already being used by BOOTCHAIN for synchronisation between proc-
-esses.
-
-
-
-How it works
-========================================================================
-
-If you are calling `./bootchain`
-
-The flow of how things are being called is:
-
-```
- BOOTCHAIN            bootstrap                  bootstrap
-                      script1                     script2
- ___________           __________________         __________________
-|           |         |                  |       |                  |
-|           |---------->    do stuff    ---------->   do stuff      |
-|           |         |  bootstrap_wait  |       |                  |
-|           |<----------    do stuff    <----------    exit 0       |
-|___________|         |__________________|       |__________________|
-```` 
-
-In the last bootstrap we omit bootstrap_wait as it's the last bootstrap.
-If this is the last bootstrap but you have placed a bootstrap_wait,
-the wait will silently be omitted.
-
-bootstrap_wait separates what it has to be done once the bootstrap has
-loaded from the things that have to be done when just before it exists (
-in most cases cleanup).
-
-
-
-Multiple targets
-========================================================================
-Target is the path you use with bootchain
-
-Essentially you run BOOTCHAIN with a list of paths. The path should
-be to the program or script you are trying to run.
-
-BOOTCHAIN will automatically look for bootstrap scripts between itself
-and the 
-
-
-
-Return value
-========================================================================
-Normally the last bootstrap's return value will be returned to all
-other bootstraps. For this reason if you want the return value to corre-
-spond to the value of the program or script you ran, you should use BASH's
-`exit` or the API's set_return_value.
-
-These functions will work only on the last bootstrap. Putting them in any
-intermediate bootstraps will have no effect on the RETURN_VALUE. This is
-desired as in that way, you can have `exit` in your cleanup without
-altering the return value of the main program/script you just ran.
-
-If you want to return more information then you could use *Unix standard
-ways like files, named pipes, sockets etc.
-
-
-
-FAQ & Design notes
-========================================================================
-
-##Do bootstraps run recursively?
-
-Bootstraps do behave as if they are running recursively. However
-in practice Bootchain acts as the parent process that synchronises
-everything. This implementation makes the code more robust.
-
-Keep in mind that in this case no data is passed from one bootstrap to
-the next.
-
-
-##Why execute bootstraps linearly and not recursively?
-
-The initial idea was to execute the bootstrap scripts recursively. However
-that becomes very complex if many files are run. Therefore a linear
-way was chosen. Furthermore it's easier to have a communication link
-between parent and child.
-Even if the implementation is linear, the behaviour is recursive.
-bootstrap_wait does wait for the next bootstrap to finish. The only
-difference with real recursion is that there is no implicit inheritance
-between the bootstraps (which is favorable to not mess things up).
-
-A plus with linearly, is that we don't have to wait for the children,
-to do their cleanup before getting the return value. We can get the
-return value directly from the last child and thus have that value before
-the cleanup of each child.
-
-
-##Why ./ (background process) and no . (source)?
-
-Source can't be used because each bootstrap has to be running (even if
-they are suspended) at the same time. By default `source` can't do that.
-
-Ofcourse you could run source with an ampersand (&) to run the whole
-thing in a separate process. But then you get the same behaviour as if
-you ran the whole thing as a background process from the beginning.
-
-
-##Parent/children synchronisation
-
-The parent and children communicate in two different way. For synchroni-
-sation purposes they use the signal SIGCONT. This is used by any of the
-two when they want to tell the other partner to continue, if they are
-"suspended".
-
-Since signals can't propagate values, a second method is nessasary.
-To return values from a child to a previous child, named pipes are used.
-This is only in case the last child exits with a number code. (In BASH
-this is by using 'exit 0' for example.)
-
-Signals can be concidered redudndant since we could have used named pipes
-for the synchronisation as well. However, having both, makes the program
-to work in the same way even if we don't return a return command  at the
-last bootstrap.
-
-##Signals vs Named pipes
-
-Named pipes can't be used by bootstrap_wait because then we would need
-a unique pipe for each individual child which becomes cumbersome.
-
-For this reason signals have to combine with pipes so that there is only
-one process at a time waiting at a pipe end.
-
-In practice, signals can be used for the synchronisation until we reach
-the latest bootstrap. After that we need to combine signals with pipe.
-Namely we signal the previous child that we have created a pipe that it
-can read.
-
-##How does export_var work?
-
-It essentially appends the variable in a file. Then bootchain just exports
-each individual variable to the next child.

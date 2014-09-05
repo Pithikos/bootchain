@@ -1,0 +1,125 @@
+FAQ & Design notes
+========================================================================
+
+##Do bootstraps run recursively?
+
+Bootstraps do behave as if they are running recursively. However
+in practice Bootchain acts as the parent process that synchronises
+everything. This implementation makes the code more robust.
+
+Keep in mind that in this case no data is passed from one bootstrap to
+the next.
+
+
+##Why execute bootstraps linearly and not recursively?
+
+The initial idea was to execute the bootstrap scripts recursively since
+that is what we are trying to do with Bootchain - run scripts recursively.
+However there are some reasons that the linear implementation is
+prefarable:
+
+* Less overhead when the number of bootstraps increases.
+* Each bootstrap has no children and therefore can act
+  as a simple BASH script without weird behaviours (like export for example)
+* Greater control since Bootchain can decide what to do with each bootstrap
+  since it's its immediate child.
+* We are not locked to using recursion in every bootstrap.
+* Because we are not locked, we can run any BASH script without a change.
+
+The linear implementation is a bit more complex but in the long end it
+pays off.
+
+
+##Why ./ (background process) and no . (source)?
+
+Each bootstrap is run as background process instead of sourcing it.
+
+Source can't be used because some of the bootstraps will be running (even if
+they are suspended) at the same time. By default `source` can't do that.
+
+Ofcourse you could run source with an ampersand (&) to run the whole
+thing in a separate process. But then you get the same behaviour as if
+you ran the whole thing as a background process from the beginning so we
+come back to the same problem.
+
+
+##Parent/children synchronisation
+
+The parent and children communicate in two different way. For synchroni-
+sation purposes they use the signal SIGCONT. This is used by any of the
+two when they want to tell the other partner to continue, if they are
+"suspended".
+
+Since signals can't propagate values, a second method is nessasary.
+To return values from a child to a previous child, named pipes are used.
+This is only in case the last child exits with a number code. (In BASH
+this is by using 'exit 0' for example.)
+
+Signals can be concidered redudndant since we could have used named pipes
+for the synchronisation as well. However, having both, makes the program
+to work in the same way even if we don't return a return command  at the
+last bootstrap.
+
+
+##Signals vs Named pipes
+
+Named pipes can't be used by bootstrap_wait because then we would need
+a unique pipe for each individual child which becomes cumbersome.
+
+For this reason signals have to combine with pipes so that there is only
+one process at a time waiting at a pipe end.
+
+In practice, signals can be used for the synchronisation until we reach
+the latest bootstrap. After that we need to combine signals with pipe.
+Namely we signal the previous child that we have created a pipe that it
+can read.
+
+
+##How can a bootstrap communicate with an other one?
+
+The easiest way is to use export_var to make a variable be inherited
+to felow bootstraps. If you want more power you can however use the
+common ways of inter-process communication like signals, pipes, sockets,
+files, etc. Just keep in mind that Bootchain uses internally the SIGCONT
+signal so don't use that. Also it uses some named pipes and files found
+in /tmt/. Each file is being prepended with the prefix "bootchain_".
+
+
+##How does export_var work?
+
+It essentially appends the variable in a file. Then bootchain just exports
+each individual variable to the next child it creates. This way the next
+bootstrap script can use the variables directly in the whole script. The
+variables accumulate in this file and are then being exported to every
+child.
+
+##Can I see all variables exported?
+
+You can see the variables you manually exported with export_var
+by simply checking the appropriate file in /tmt. Check the configuration
+in the Bootchain file and specifically the variable $vars_file that holds
+the path to that file.
+
+
+##What's the scope of API variables?
+
+Well there are two types of variables. The ones exported with export_var
+and the ones provided by the API. The API variables like $TARGET are
+bootstrap-specific. That means that for every bootstrap, they might dither.
+The ones that you manually export with export_var are exported to ALL
+children. Keep in mind that these values will be static ones exported,
+meaning that they are not going to update automatically.
+
+
+##How does bootstrap_wait work?
+
+bootstrap_wait mainly waits for the next bootstrap to finish. In practice
+it does a bit more than just wait for the process to finish. For example
+among the things it does is to acknowledge to Bootchain that the
+script has executed successfully this far.
+
+
+##How do I return a value?
+
+You can do it two ways. You can either use either BASH's `exit` or
+Bootchain's set_return_value. 
