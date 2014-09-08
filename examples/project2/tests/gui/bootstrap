@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+echo "2 ~~ ENTRY ($BASHPID)"
+echo "Will install Selenium"
+#docker-enter `$1`
+
+
+bootstrap_wait
+echo "2 ~~ EXIT ($BASHPID)"

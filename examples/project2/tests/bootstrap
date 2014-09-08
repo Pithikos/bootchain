@@ -1,0 +1,87 @@
+#!/bin/bash
+
+#####################################################
+#                                                   #
+#      BOOTSTRAP TO RUN TEST INSIDE CONTAINER       #
+#                                                   #
+#####################################################
+
+image="mbed/mbed-web:manos-testing-version" # Image to run the tests
+docker_log="docker_log"                     # Where to log docker messages
+
+
+#Functions
+function container_short_ID { # cont_long_ID
+	echo "$1" | cut -b -12
+}
+
+function wait_container { # cont_ID
+	local timeout=10
+	local step=1
+	local counter=0
+	local shortID=$(container_short_ID $1)
+	while [ `docker ps -q | grep "$shortID"` != "$shortID" ]; do
+		sleep $step
+		counter=$(($counter + $step))
+		if ((counter == timeout)); then
+			echo "ERROR: Waiting for container to appear: Timeout reached"
+			exit 1
+		fi
+	done
+}
+
+
+
+
+
+################ ENTRY ################
+
+echo "1 ~~ ENTRY ($BASHPID)"
+
+# Pull image
+echo "Pulling image.."
+docker pull "$image" &>> "$docker_log"
+if (($? != 0)); then
+	echo "ERROR: Could not pull image $image"
+	echo "Check docker_log '$docker_log' for more info" 
+	echo "Exiting"
+	exit 1
+fi
+
+# Run it
+echo "Running image.."
+contID=$(docker run -d -p 80:80 "$image" 2>> "$docker_log")
+if (($? != 0)); then
+	echo "ERROR: Could not run image $image"
+	echo "Check docker_log '$docker_log' for more info" 
+	echo "Exiting"
+	exit 1
+fi
+
+# Wait for it to show up
+wait_container "$contID"
+echo "Image running successfully as "`container_short_ID $contID`".."
+
+
+
+############### Wait for next bootstrap
+set_var CONTAINER_ID $contID
+bootstrap_wait
+
+
+
+################ EXIT ################
+
+
+echo "1 ~~ EXIT ($BASHPID)"
+
+# Remove container
+echo "Will stop container.."
+docker stop "$contID" &> "$docker_log"
+if (($? != 0))
+then
+	echo "ERROR: Could not stop container $ID"
+	echo "Check docker_log '$docker_log' for more info" 
+	echo "Exiting"
+	exit 1
+fi
