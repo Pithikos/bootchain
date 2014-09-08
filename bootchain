@@ -382,5 +382,8 @@ do
 			resume_child "$child"
 		fi
 	done
+	
+	# Read last return
+	read_fifo
 
 done
