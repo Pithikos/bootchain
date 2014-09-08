@@ -9,7 +9,7 @@
 #      target                                              #
 #   2. Executes these bootstraps pseudo-recursively        #
 #                                                          #
-#   Usage: ./bootstrap.sh mytest mytest2 mytest3           #
+#   Usage: ./bootstrap.sh <target1> <target2> ..           #
 #                                                          #
 ############################################################
 
