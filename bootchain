@@ -52,7 +52,13 @@ function cleanup () {
 #=============================== API ===================================
 
 export_var () { #var_name #var_value
-	echo "${1}=\"${2}\"" >> "$vars_file"
+	if (( $# != 2 ))
+	then
+		echo "ERROR: export_var takes two arguments, $# given"
+		echo "       will not export variable"
+	else
+		echo "${1}=\"${2}\"" >> "$vars_file"
+	fi
 }
 export vars_file
 export -f export_var
