@@ -218,22 +218,27 @@ project4 - Changing the RETURN_VALUE from an intermediate bootstrap
 #API
 All functions and variables are optional.
 
+Some definitions:
+target
+
 
 ##Functions
 
+````
 bootstrap_wait          Pauses the script until the next bootstrap has
                         finished. Omitting this, will execute the whole
                         script without waiting for the next bootstrap.
                         
 export_var NAME VALUE   Similar to BASH' export. This function will set
                         a variable to be inherited to ALL sub-bootstraps.
-
+````
 
 
 ##Variables
 
 The below variables are visible from all bootstraps.
 
+````
 TARGET             The name of the file that was given to bootchain.
 
                    For example if you run ./bootchain a/b/c/script then
@@ -244,14 +249,16 @@ TARGET_PATH        The path to the target file relative to bootchain.
                    For example if you run ./bootchain a/b/c/script then
                    the TARGET_PATH would be 'a/b/c/script'
 
-RETURN_VALUE       Whenever you use BASH' exit command in a bootstrap,
-                   this variable gets that exit code. This exit code
-                   can be seen from all children.
+RETURN_VALUE       Every bootstrap after the bootstrap_wait function
+                   gets this variable. To change this variable you simply
+                   have to use BASH' exit command. It's common to exit
+                   at the last bootstrap with the exit code of the program
+                   or script ran. In that way, RETURN_VALUE will hold
+                   the exit code of the target we just ran.
                    
-                   In order to change it at some point you simply
-                   call the exit command again.
-				   After that you can use the RETURN_VALUE in every
-				   bootstrap (just after bootstrap_wait).
+                   RETURN_VALUE remains unchanged until a bootstrap uses
+				   BASH' exit again.
+````
 
 
 * Notice that all variables passed to a bootstrap are in capital to make
