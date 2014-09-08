@@ -206,11 +206,11 @@ project2 - Running tests in a docker container. you need to have Pithikos's
 
 project3 - Deeply nested bootstraps
            
-           Run with: ./bootchain examples/project3/a/b/c/d/e/test.py
+           Run with: ./bootchain examples/project3/a/b/c/d/e/*.py
            
 project4 - Changing the RETURN_VALUE from an intermediate bootstrap
 
-           Run with: ./bootchain examples/project4/a/b/c/d/e/return_22.py
+           Run with: ./bootchain examples/project4/a/b/c/d/e/*.py
 ```
 
 
