@@ -229,6 +229,11 @@ bootstrap_wait          Pauses the script until the next bootstrap has
                         finished. Omitting this, will execute the whole
                         script without waiting for the next bootstrap.
                         
+                        If you use this function don't include any of the
+                        below in your bootstrap code:
+                              * trap on EXIT pseudosignal
+                              * use SIGCONT signal
+                        
 export_var NAME VALUE   Similar to BASH' export. This function will set
                         a variable to be inherited to ALL sub-bootstraps.
 ````
@@ -239,15 +244,11 @@ export_var NAME VALUE   Similar to BASH' export. This function will set
 The below variables are visible from all bootstraps.
 
 ````
-TARGET             The name of the file that was given to bootchain.
+TARGET             Relative path to the target file from the bootstrap.
 
-                   For example if you run ./bootchain a/b/c/script then
-                   the TARGET would be 'script'
-                   
-TARGET_PATH        The path to the target file relative to bootchain.
-                   
-                   For example if you run ./bootchain a/b/c/script then
-                   the TARGET_PATH would be 'a/b/c/script'
+TARGET_PATH        Path of the target without the target file.
+
+TARGET_FILE        The name of the target file.
 
 RETURN_VALUE       Every bootstrap after the bootstrap_wait function
                    gets this variable. To change this variable you simply

@@ -52,7 +52,7 @@ function cleanup () {
 #=============================== API ===================================
 
 export_var () { #var_name #var_value
-	echo "$1"'='\""$2"\" >> "$vars_file"
+	echo "${1}=\"${2}\"" >> "$vars_file"
 }
 export vars_file
 export -f export_var
@@ -174,7 +174,9 @@ function count_char { #string #char
    len $( echo "$1" | tr -d -c "$2\n" )
 }
 
-
+function last_char { #string
+   echo "${1: -1}"
+}
 
 # All possible paths excluding . and ..
 function all_paths { #path
@@ -199,7 +201,27 @@ function last_path { #paths
 	echo `echo "$1" | sed 's/.* //'`
 }
 
-function count_paths { #paths
+function diff_paths { #path1 #path2
+	if (( `len "$1"` > `len "$2"` ))
+	then
+		path1=$1
+		path2=$2
+	else
+		path1=$2
+		path2=$1
+	fi
+	if [ `last_char "$path1"` != '/' ]
+	then
+		path1="${path1}/"
+	fi
+	if [ `last_char "$path2"` != '/' ]
+	then
+		path2="${path2}/"
+	fi
+	echo "${path1#$path2}"
+}
+
+function count_paths { #paths_spaced_with_space
 	echo "$1" | tr -d -c ' ' | awk '{ print length+1 }'
 }
 
@@ -294,10 +316,6 @@ do
 	fi
 	
 	# Set vars
-	TARGET_PATH=$target
-	TARGET=`basename $target`
-	export TARGET_PATH
-	export TARGET
 	rm -f "$vars_file"
 	
 	echo "-------------------------------------------------------------"  
@@ -312,7 +330,16 @@ do
 	# Run sibling + suspended_children bootstraps (order is important)
 	for bootstrap in `echo "$bootstraps"`
 	do
-
+	
+		# Child inheritage
+		bootstrap_path=`dirname "$bootstrap"`
+		TARGET_FILE=`basename $target`
+		TARGET_PATH=`dirname $target`
+		TARGET=`diff_paths "$TARGET_PATH" "$bootstrap_path"`"$TARGET_FILE"
+		export TARGET_PATH
+		export TARGET_FILE
+		export TARGET
+		
 		# Spawn child
 		spawn_child "$bootstrap"
 		pid=$!
