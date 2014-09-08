@@ -1,10 +1,9 @@
 CHANGE
-v RETURN_VALUE should propagate until changed explicitly with BASH's exit.
-  Remove set_return_value since it's rather ambiguous.
-* superexport_var - export variables to parent
 * TARGET -> relative path to current bootstrap
-* Cleanup of Bootchain should be trapped on EXIT. Thus even malfunctions
-  will not leak info (in the form of files).
+* What if user traps on EXIT? Then we can't tell
+  if there is implicit or explicit exit.
+* Add -R flag to run all files in subfolders (don't run bootstrap itself)
+
 
 ASSURE
 * Bootstrap filename extensions are omitted
@@ -13,21 +12,4 @@ ADD
 * TARGET_FILE -> filename of target
 * Automatically chmod +x each bootstrap
 
-CLEANUP
-* Remove all set_return_value stuff
 
-DO
-* TEST count_char
-
-
-
-
-
-
-
-
-
-
-
-* == Not done
-v == Done
