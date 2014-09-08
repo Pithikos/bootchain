@@ -1,10 +1,13 @@
 #!/bin/bash
 
+# These tests don't use Bootchain to run on itself
+# since that would complicate things and in many
+# cases give false information.
+
+
 
 tmp_file="tmp_file"
 tmp_file2="tmp_file2"
-cd ..
-echo "--------------------------------------------------"
 
 
 
@@ -13,16 +16,16 @@ echo "--------------------------------------------------"
 # issue.
 rm -f "$tmp_file"
 rm -f "$tmp_file2"
-./bootchain examples/project3/a/b/c/d/e/test.py > "$tmp_file"
+./bootchain examples/project3/a/b/c/d/e/*.py > "$tmp_file"
 cat tmp_file | grep -e "([0-9]*)" | sed "s/.*\(([0-9]*)\).*/\1/" | sed "s/.\([0-9]*\)./\1/" > "$tmp_file2"
 rm -f "$tmp_file"
 pids=`cat "$tmp_file2"`
 pids_mirr=`tac "$tmp_file2" || tail -r bootchain`
 if [ "$pids" == "$pids_mirr" ]
 then
-	echo "Synchronisation: PASS"
+	echo "Bootstraps launching in-line: PASS"
 else
-	echo "Synchronisation: FAIL"
+	echo "Bootstraps launching in-line: FAIL"
 	exit 1
 fi
 

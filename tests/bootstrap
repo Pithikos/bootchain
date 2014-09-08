@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# These tests are made to test Bootchain
-# However since they are themselves using
-# Bootchain, they might not be trustworthy
-# always.
-
-echo "Will run test: $TARGET"
-./"$TARGET"
