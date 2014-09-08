@@ -19,6 +19,7 @@
 
 
 #Bootchain?!
+
 Bootchain is essentially a simple BASH script which runs other scripts
 recursively. Visually that would look like a chain of scripts.
 
@@ -44,6 +45,7 @@ in a single file.
 
 
 #Benefits of using Bootchain
+
 **Intuitive**
 Your project is already stored in folders and subfolders (hopefully in a nice
 organized manner). Bootchain takes advantage of that since it uses the
@@ -202,7 +204,7 @@ project1 - Simple demonstration
 project2 - Running tests in a docker container. you need to have Pithikos's
            docker-enter installed for this to work.
            
-           Run with: 
+           Run with: <not fully working yet>
 
 project3 - Deeply nested bootstraps
            
@@ -217,9 +219,6 @@ project4 - Changing the RETURN_VALUE from an intermediate bootstrap
 
 #API
 All functions and variables are optional.
-
-Some definitions:
-target
 
 
 ##Functions
