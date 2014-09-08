@@ -59,11 +59,11 @@ export -f export_var
 
 export LAST_CHILD
 bootstrap_wait () {
-   trap "exit_handler" EXIT
+	trap "exit_handler" EXIT
 	if ! $LAST_CHILD
 	then
 		suspend_me
-		read_fifo
+		RETURN_VALUE=`read_fifo`
 	fi
 }
 export -f bootstrap_wait
@@ -76,18 +76,14 @@ export fifo_file
 # Makes sure we know if user invoked exit explicitly
 # Needs a trap to EXIT to work
 exit_handler () {
-   ret=$?
-   if echo "$BASH_COMMAND" | grep -e "^exit \|^exit$" >> /dev/null
-   then
-      echo "it was an explicit exit"
-      # THUS WE SHOULD UPDATE RETURN VALUE
-      RETURN_VALUE=$ret
-   else
-      echo "it was an implicit exit"
-      # WE SHOULDN'T DO ANYTHING HERE, LET RETURN VALUE PROPAGATE
-   fi
-   write_fifo $ret
-   exit $ret
+	ret=$?
+	if echo "$BASH_COMMAND" | grep -e "^exit \|^exit$" >> /dev/null
+	then
+		# Explicit exit
+		RETURN_VALUE=$ret
+	fi
+	write_fifo "$RETURN_VALUE" &
+	exit $ret
 }
 export -f exit_handler
 
@@ -148,13 +144,11 @@ resume_child () { #child_pid
 }
 
 write_fifo () { #string
-   echo "write_fifo ($BASHPID)"
-   echo "$1" > "$fifofile"
+   echo "$1" > "$fifo_file"
 }
 export -f write_fifo
 
 read_fifo () {
-   echo "read_fifo ($BASHPID)"
    cat "$fifo_file"
 }
 export -f read_fifo
@@ -355,10 +349,8 @@ do
 	RETURN_VALUE="$?"
 	LAST_CHILD=false
 
-	# Returning value to prev child
-	rm -f "$fifo_file"
-	mkfifo -m a=rw "$fifo_file"
-	echo "$RETURN_VALUE" > "$fifo_file" &
+	# Send val to last suspended child
+	write_fifo "$RETURN_VALUE" &
 
 	# Exit suspended bootstraps gradually in a LIFO fashion
 	for (( i=${#suspended_children[@]}-1 ; i>=0 ; i-- ))
@@ -366,20 +358,9 @@ do
 		child="${suspended_children[i]}"
 		if pid_exists "$child"
 		then
-			
-         
-        #RETURN_VALUE=
-         
-		# Write return value to fifo for child to read
-        # SOMEHOW UPDATE RETURN VALUE
-        # THUS PARENT MUST KNOW IF EXPLICIT
-        read_fifo
-			
-		# Then resume
-		resume_child "$child"
-        echo sigcontinue "$child"
-         
-        #RETURN_VALUE=$?
+			RETURN_VALUE=`read_fifo`
+	        write_fifo "$RETURN_VALUE" &
+			resume_child "$child"
 		fi
 	done
 
