@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# RETURN_VALUE should be 22 from this script and
+# after until a new exit command occurs
+
+echo "Bootstrap 5 ~~ ENTRY ($BASHPID)"
+python "$TARGET"
+return_value=$?
+echo "Bootstrap 5 ~~ EXIT ($BASHPID)"
+exit $return_value

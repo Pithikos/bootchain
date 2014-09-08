@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "Bootstrap 1 ~~ ENTRY ($BASHPID)"
+bootstrap_wait
+echo "RETURN_VALUE: $RETURN_VALUE"
+echo "Bootstrap 1 ~~ EXIT ($BASHPID)"
+echo "Return value from $TARGET is $RETURN_VALUE"

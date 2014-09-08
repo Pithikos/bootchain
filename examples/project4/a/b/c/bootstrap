@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Bootstrap 3 ~~ ENTRY ($BASHPID)"
+bootstrap_wait
+echo "RETURN_VALUE: $RETURN_VALUE"
+echo "Bootstrap 3 ~~ EXIT ($BASHPID)"
+
+# We change the RETURN_VALUE to 20
+# for the rest of children
+exit 20
