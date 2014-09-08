@@ -1,5 +1,5 @@
 #!/bin/bash
 
 echo "3 ~~ ENTRY ($BASHPID)"
-docker ps
+#docker ps
 echo "3 ~~ EXIT ($BASHPID)"

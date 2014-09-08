@@ -6,8 +6,8 @@
 #                                                   #
 #####################################################
 
-image="mbed/mbed-web:manos-testing-version" # Image to run the tests
-docker_log="docker_log"                     # Where to log docker messages
+image="ubuntu"          # Image to run the tests
+docker_log="docker_log" # Where to log docker messages
 
 
 #Functions
@@ -29,7 +29,6 @@ function wait_container { # cont_ID
 		fi
 	done
 }
-
 
 
 
@@ -63,9 +62,8 @@ wait_container "$contID"
 echo "Image running successfully as "`container_short_ID $contID`".."
 
 
-
 ############### Wait for next bootstrap
-set_var CONTAINER_ID $contID
+export_var "containerID" "$contID"
 bootstrap_wait
 
 
