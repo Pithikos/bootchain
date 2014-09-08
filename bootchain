@@ -18,17 +18,30 @@
 
 
 # Configuration
-bootstrap_file_name="bootstrap" #extensions are omitted
+bootstrap_file_name="bootstrap"            # extensions are omitted
 bootchain_log="chain.log"
-fifo_file="/tmp/bootchain_child_to_parent" #the fifo file used by children to send info
+fifo_file="/tmp/bootchain_child_to_parent" # the fifo file used by children to send info
 vars_file="/tmp/bootchain_vars"
 
-# Signal that children will send
+# Traps
 trap "CHILD_SUSPENDED=true" SIGCONT
+trap "cleanup" EXIT
 
 # Init
-CHILD_SUSPENDED=false
-LAST_CHILD=false
+function init () {
+	CHILD_SUSPENDED=false
+	LAST_CHILD=false
+	mkfifo -m a=rw "$fifo_file"
+}
+init
+
+# Cleanup
+function cleanup () {
+	rm -f "$vars_file"
+	rm -f "$fifo_file"
+}
+
+
 
 #=======================================================================
 #                          Public Interface
@@ -50,7 +63,7 @@ bootstrap_wait () {
 	if ! $LAST_CHILD
 	then
 		suspend_me
-		RETURN_VALUE=`cat "$fifo_file"` # this to be used in this bootstrap
+		read_fifo
 	fi
 }
 export -f bootstrap_wait
@@ -71,9 +84,10 @@ exit_handler () {
       RETURN_VALUE=$ret
    else
       echo "it was an implicit exit"
-      
       # WE SHOULDN'T DO ANYTHING HERE, LET RETURN VALUE PROPAGATE
    fi
+   write_fifo $ret
+   exit $ret
 }
 export -f exit_handler
 
@@ -133,6 +147,17 @@ resume_child () { #child_pid
 	kill_and_wait "$1" SIGCONT
 }
 
+write_fifo () { #string
+   echo "write_fifo ($BASHPID)"
+   echo "$1" > "$fifofile"
+}
+export -f write_fifo
+
+read_fifo () {
+   echo "read_fifo ($BASHPID)"
+   cat "$fifo_file"
+}
+export -f read_fifo
 
 # This will export all variables found in $vars_file
 export_vars () {
@@ -160,8 +185,7 @@ function len { #string
 }
 
 function count_char { #string #char
-   len "$( echo "$1" | tr -d -c "$2\n" )"
-	#echo "$1" | tr -d -c "$2\n" | awk '{ print length; }'
+   len $( echo "$1" | tr -d -c "$2\n" )
 }
 
 
@@ -210,7 +234,6 @@ function has_bootstrap_wait { #bootstrap_path
 		false
 	fi
 }
-
 
 function all_bootstraps { #path
 	paths='. '`all_paths "$1"`
@@ -273,10 +296,6 @@ fi
 # Run specified test in it
 echo
 echo "Will run targets.."
-
-# Create a pipe for children to get return values
-rm -f "$fifo_file"
-mkfifo -m a=rw "$fifo_file"
 
 for target in "$@"
 do
@@ -341,7 +360,7 @@ do
 	mkfifo -m a=rw "$fifo_file"
 	echo "$RETURN_VALUE" > "$fifo_file" &
 
-	# Exit remaining bootstraps gradually in a LIFO fashion
+	# Exit suspended bootstraps gradually in a LIFO fashion
 	for (( i=${#suspended_children[@]}-1 ; i>=0 ; i-- ))
 	do
 		child="${suspended_children[i]}"
@@ -349,23 +368,19 @@ do
 		then
 			
          
-         #RETURN_VALUE=
+        #RETURN_VALUE=
          
-			# Write return value to fifo for child to read
-         # SOMEHOW UPDATE RETURN VALUE
-         # THUS PARENT MUST KNOW IF EXPLICIT
-			echo "$RETURN_VALUE" > "$fifo_file" &
+		# Write return value to fifo for child to read
+        # SOMEHOW UPDATE RETURN VALUE
+        # THUS PARENT MUST KNOW IF EXPLICIT
+        read_fifo
 			
-			# Then resume
-			resume_child "$child"
+		# Then resume
+		resume_child "$child"
+        echo sigcontinue "$child"
          
-         #RETURN_VALUE=$?
+        #RETURN_VALUE=$?
 		fi
 	done
 
 done
-
-
-# Cleanup
-rm -f "$vars_file"
-rm -f "$fifo_file"
