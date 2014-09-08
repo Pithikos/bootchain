@@ -3,4 +3,4 @@
 echo "Bootstrap 1 ~~ ENTRY ($BASHPID)"
 bootstrap_wait
 echo "Bootstrap 1 ~~ EXIT ($BASHPID)"
-echo "Return value from $TARGET is $RETURN_VALUE"
+echo "Return value from $TARGET_FILE is $RETURN_VALUE"
