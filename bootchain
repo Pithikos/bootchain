@@ -100,14 +100,6 @@ suspend_me () {
 export -f suspend_me
 
 
-set_return_value () { #value
-	#RETURN_VALUE="$1"
-	#trap "exit $RETURN_VALUE" EXIT
-   echo
-}
-export -f set_return_value
-
-
 #=======================================================================
 #                     Interprocess communication
 #=======================================================================
