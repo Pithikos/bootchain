@@ -26,15 +26,15 @@ Why not call it Scriptchain then? Well, you could. However Bootchain was
 made with the initial goal to unify the test files in a big project.
 Imagine having a bunch of test files, each in a different language or
 using a totally different framework. You either need a thorough
-documentation on how to run each individual test or ysome sort of tool that
-keeps meta-data about your test files. Bootchain takes the second apporach.
-However instead of using some static text files defining things, it uses
+documentation on how to run each individual test or some sort of tool that
+keeps meta-data about your test files. Bootchain takes the second approach.
+However instead of using some text files defining things, it uses
 simple BASH-scripts. In that way you don't need to learn anything new.
 You just make a BASH script and make sure that it knows how to run your
 test file/files.
 
 An other way to think of these BASH-scripts is as bootstraps. Bootstraps
-are generally scripts or programs that run other scripts or programs.
+are generally scripts or programs that run other (bigger) scripts or programs.
 Since these wrappers are just BASH-scripts in our case, we have quite some
 freedom and power as to what we can do with them. You can setup an
 environment where you want your ultimate program/script to run for example
@@ -46,8 +46,9 @@ in a single file.
 #Benefits of using Bootchain
 **Intuitive**
 Your project is already stored in folders and subfolders (hopefully in a nice
-organized manner). Bootchain takes advantage of that. Namely you place
-a bootstrap in the folder that makes sense to you and IF you want.
+organized manner). Bootchain takes advantage of that since it uses the
+already hierarchy tree of your project. So you just have to add a
+bootstrap in the folder that makes sense to you and IF you want.
 The bootstrap has then an effect on everything underneath it
 (recursively).
 
@@ -57,6 +58,18 @@ a simple bootstrap_wait command (and even that is optional). This
 command just tells the script to wait for the next script to finish
 before continuing. Simple, right? Ofcourse you are given some more
 variables and functions you can use but EVERYTHING is optional!
+
+**Idiot-safe**
+The user has little to take into concideration when making a bootstrap.
+As an example when the last child has finished, the return value will
+be propagated automatically from child to child as long as the user
+doesn't add an exit command explicitly.
+
+**Permissive**
+Bootstrap can be anything from a bootstrap in BASH to a normal program.
+The only advantage of using a BASH as bootstrap is that you then use
+the API and thus achieve full recursion (in practice return values and
+cleanups).
 
 **Recursion when it makes sense**
 You can achieve full recursion behaviour by using the API. However
@@ -77,6 +90,7 @@ and what not.
 1. Copy bootchain in a folder.
 2. Create at least one bootstrap between that folder and the target
    file (the one you would like to run with bootchain)
+3. Make sure the bootstrap is executable (chmod +x).
 3. Use the API of Bootchain if you like
 4. Run the target file/files with bootchain:
 
@@ -137,7 +151,7 @@ In most cases you would want the last bootstrap to run the actual target.
 In our case the second bootstrap should have at some point
 
     python $TARGET
-    set_return_value ?$
+    exit ?$
 
 $TARGET is the relative path from the bootstrap to the target file we
 want to run.
@@ -181,22 +195,22 @@ them as templates for your projects.
 
 
 ```
-project1 - running a few (really) simple tests in python
+project1 - Simple demonstration
 
            Run with: ./bootchain examples/project1/tests/gui/logged_in/*.py
 
-project2 - running tests in a docker container. you need to have Pithikos's
+project2 - Running tests in a docker container. you need to have Pithikos's
            docker-enter installed for this to work.
            
            Run with: 
 
-project3 - very deeply nested bootstraps
+project3 - Deeply nested bootstraps
            
            Run with: ./bootchain examples/project3/a/b/c/d/e/test.py
            
-project4 - Demonstrates how to return a value
+project4 - Changing the RETURN_VALUE from an intermediate bootstrap
 
-           Run with: ./bootchain examples/project4/a/b/c/return_22.py
+           Run with: ./bootchain examples/project4/a/b/c/d/e/return_22.py
 ```
 
 
@@ -210,20 +224,6 @@ All functions and variables are optional.
 bootstrap_wait          Pauses the script until the next bootstrap has
                         finished. Omitting this, will execute the whole
                         script without waiting for the next bootstrap.
-                   
-set_return_value VALUE  This can be used in the last bootstrap to set a
-				            specific value to RETURN_VALUE. It's essentially
-                        an alternative of using BASH's `exit`. Keep in
-                        mind though that set_return_value will OVERRIDE
-                        BASH's `exit`. This is
-                        helpful if you want to store the return value
-                        of a command but want to continue doing some things
-                        before exiting the bootstrap. Keep in mind that
-                        if you have both `exit` and set_return_value
-                        `exit` won't have any effect on the RETURN_VALUE.
-                        This is helpful since you can always see the RETURN_VALUE
-                        of the executed target, and the return value of
-                        the previous bootstrap.
                         
 export_var NAME VALUE   Similar to BASH' export. This function will set
                         a variable to be inherited to ALL sub-bootstraps.
@@ -244,20 +244,14 @@ TARGET_PATH        The path to the target file relative to bootchain.
                    For example if you run ./bootchain a/b/c/script then
                    the TARGET_PATH would be 'a/b/c/script'
 
-RETURN_VALUE       This is empty until you set a value to it in the last
-                   bootstrap. This comes in handy if you want to save
-                   the return value of the script/program that the
-                   last bootstrap runs.
+RETURN_VALUE       Whenever you use BASH' exit command in a bootstrap,
+                   this variable gets that exit code. This exit code
+                   can be seen from all children.
                    
+                   In order to change it at some point you simply
+                   call the exit command again.
 				   After that you can use the RETURN_VALUE in every
 				   bootstrap (just after bootstrap_wait).
-				   
-				   Notice that if you don't have bootstrap_wait in a
-				   between-bootstrap then the value can't be read from
-				   the parent bootstraps of that. So if you want to pass
-				   down the return value from the last, to the first
-				   bootstrap, make sure you use bootstrap_wait in every
-				   single bootstrap involved.
 
 
 * Notice that all variables passed to a bootstrap are in capital to make
