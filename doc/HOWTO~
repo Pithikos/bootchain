@@ -23,7 +23,7 @@ Return value
 Normally the last bootstrap's return value will be returned to all
 other bootstraps. For this reason if you want the return value to corre-
 spond to the value of the program or script you ran, you should use BASH's
-`exit`.
+`exit` or the API's set_return_value.
 
 These functions will work only on the last bootstrap. Putting them in any
 intermediate bootstraps will have no effect on the RETURN_VALUE. This is

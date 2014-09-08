@@ -1,0 +1,33 @@
+Value propagation between master and children
+----------------------------------------------------------------------
+
+
+	M               ch1              ch2              ch3
+	spawn                
+	                ... 
+	                wait            
+	spawn                            ...
+	                                 wait
+	                                                
+	spawn                                             ...
+	                                                  return
+	RET..=$?
+	write_fifo
+	resume child
+	                                 continue
+	                                 read_fifo
+	                                 write_fifo
+	read_fifo
+	write_fifo
+	resume child    
+	                continue
+	                read_fifo
+	                write_fifo
+	read_fifo
+
+
+ch1 and ch2 are suspended. Non-suspended children are not waiting,
+thus we just don't care about them.
+
+ch3 is a special case. Master will read directly the return value of the
+bootstrap to get the value.
