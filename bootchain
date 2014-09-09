@@ -390,6 +390,6 @@ do
 	done
 	
 	# Read last return
-	read_fifo
+	read_fifo &> /dev/null
 
 done
