@@ -2,10 +2,12 @@ CHANGE
 * TARGET -> relative path to current bootstrap
 * What if user traps on EXIT? Then we can't tell
   if there is implicit or explicit exit.
-* Add -R flag to run all files in subfolders (don't run bootstrap itself)
+* Add flag -R to run all files in subfolders (don't run bootstrap itself)
 * Redesign -> bootstrap_wait should just run the next bootstrap as a child process. Will it break anything? Else it's best
   since we can use export as normal and we can get away with synchronisation.
 * export_var should take only one argument: the variable
+* Add flag -b -> use specific bootstrap
+* Add flag -l -> bootstrap levels, numbers or words: last, first, all(default). also takes -1, 0 (root)
 
 ASSURE
 * Bootstrap filename extensions are omitted
