@@ -5,6 +5,7 @@ CHANGE
 * Add -R flag to run all files in subfolders (don't run bootstrap itself)
 * Redesign -> bootstrap_wait should just run the next bootstrap as a child process. Will it break anything? Else it's best
   since we can use export as normal and we can get away with synchronisation.
+* export_var should take only one argument: the variable
 
 ASSURE
 * Bootstrap filename extensions are omitted
