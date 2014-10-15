@@ -6,7 +6,7 @@
  \         `/\                  
   \    _-   `/\       _.--.     * Unify programs & scripts of different 
    \    _-   `/`-..--\     )      languages and frameworks
-    \    _-   `,','  /    ,')   * Simply BASH
+    \    _-   `,','  /    ,')   * Simply BASH - No need to learn a new framework
      `-_   -   ` -- ~   ,','    * Can run existing scripts without a
       `-              ,','        single change
        \,--.    ____==-~        * Intuitive behaviour
