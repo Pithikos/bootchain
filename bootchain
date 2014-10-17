@@ -390,6 +390,10 @@ do
 	done
 	
 	# Read last return
-	exit $(read_fifo)
+	ret=$(read_fifo)
+	if (( ret != 0 )); then
+		echo "ERROR: script returned $ret"
+	fi
+	exit $ret
 
 done
