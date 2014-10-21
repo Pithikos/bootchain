@@ -4,7 +4,7 @@
 # after until a new exit command occurs
 
 echo "Bootstrap 5 ~~ ENTRY ($BASHPID)"
-python return_22.py
+python "$TARGET"
 return_value=$?
 echo "Bootstrap 5 ~~ EXIT ($BASHPID)"
 exit $return_value

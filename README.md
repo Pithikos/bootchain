@@ -243,11 +243,9 @@ export_var NAME VALUE   Similar to BASH' export. This function will set
 The below variables are visible from all bootstraps.
 
 ````
-TARGET             Relative path to the target file from the bootstrap.
+TARGET             Full path to the target file.
 
-TARGET_PATH        Path of the target without the target file.
-
-TARGET_FILE        The name of the target file.
+ROOT               Full path to bootchain directory.
 
 RETURN_VALUE       Every bootstrap after the bootstrap_wait function
                    gets this variable. To change this variable you simply

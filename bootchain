@@ -338,13 +338,10 @@ do
 	do
 	
 		# Child inheritage
-		bootstrap_path=`dirname "$bootstrap"`
-		TARGET_FILE=`basename $target`
-		TARGET_PATH=`dirname $target`
-		TARGET=`diff_paths "$TARGET_PATH" "$bootstrap_path"`"$TARGET_FILE"
-		export TARGET_PATH
-		export TARGET_FILE
+		ROOT=$PWD
+		TARGET="$PWD/${target}"
 		export TARGET
+		export ROOT
 		
 		# Spawn child
 		spawn_child "$bootstrap"

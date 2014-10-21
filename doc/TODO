@@ -1,5 +1,4 @@
 CHANGE
-* TARGET -> relative path to current bootstrap
 * What if user traps on EXIT? Then we can't tell
   if there is implicit or explicit exit.
 * Add flag -R to run all files in subfolders (don't run bootstrap itself)
