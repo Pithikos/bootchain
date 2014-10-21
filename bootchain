@@ -339,7 +339,12 @@ do
 	
 		# Child inheritage
 		ROOT=$PWD
-		TARGET="$target"
+		first_char=`echo "$target" | cut -c1`
+		if [ $first_char == '/' ]; then
+			TARGET="$target"
+		else
+			TARGET="$PWD/${target}"
+		fi
 		export TARGET
 		export ROOT
 		
