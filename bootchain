@@ -339,7 +339,7 @@ do
 	
 		# Child inheritage
 		ROOT=$PWD
-		TARGET="$PWD/${target}"
+		TARGET="$target"
 		export TARGET
 		export ROOT
 		
