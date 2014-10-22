@@ -257,7 +257,3 @@ RETURN_VALUE       Every bootstrap after the bootstrap_wait function
                    RETURN_VALUE remains unchanged until a bootstrap uses
 				   BASH' exit again.
 ````
-
-
-* Notice that all variables passed to a bootstrap are in capital to make
-  it more aparent that they are part of bootchain.
